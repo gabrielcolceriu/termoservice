@@ -1,7 +1,7 @@
 {
   "domain": "termoservice",
   "name": "TermoService Iasi",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "documentation": "https://github.com/gabrielcolceriu/termoservice",
   "requirements": [
     "requests>=2.31.0",
@@ -11,4 +11,3 @@
   "config_flow": true,
   "iot_class": "cloud_polling"
 }
-
