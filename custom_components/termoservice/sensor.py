@@ -107,7 +107,8 @@ class TermoWaterColdLatestSensor(_BaseTermoSensor):
     @property
     def native_value(self):
         acc = (self.coordinator.data or [])[self._acc_idx]
-        return None if not acc.water_latest else acc.water_latest.cold
+        return None if not acc.water_latest else acc.water_latest.total_consum
+
 
 class TermoWaterSubmittedAtSensor(_BaseTermoSensor):
     @property
