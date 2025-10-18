@@ -21,13 +21,14 @@ class PaymentEvent:
         self.amount = amount
         self.method = method
 
+@dataclass
 class WaterEntry:
-    def __init__(self, month: str, total_cold_consum: Optional[float], submitted_at: Optional[str], meters: Dict[str, Dict[str, Optional[float]]]):
-        self.month = month
-        self.cold = total_cold_consum
-        self.hot = None
-        self.submitted_at = submitted_at
-        self.meters = meters  # { meter_name: { "index": float|None, "consum": float|None } }
+    month: str
+    cold: Optional[float]
+    hot: Optional[float]
+    submitted_at: Optional[str]
+    meters: Optional[list] = None
+    total_consum: Optional[float] = None
 
 class AccountSummary:
     def __init__(self, apartment_name: str, as_of: str, total_to_pay: float, items: Dict[str, float], monthly_rows: List[PaymentRow], last_payment: Optional[PaymentEvent], water_latest: Optional[WaterEntry]):
