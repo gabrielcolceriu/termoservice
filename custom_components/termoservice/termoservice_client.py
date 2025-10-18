@@ -123,39 +123,66 @@ class TermoServiceClient:
         method = tds[2].get_text(strip=True) if len(tds) > 2 else None
         return PaymentEvent(date=date, amount=amount, method=method)
 
-    def _fetch_water_latest(self) -> Optional[WaterEntry]:
-        html = self._get("https://tsiasi.ro/contul-meu/consum-apa")
-        s = BeautifulSoup(html, "html.parser")
-        table = s.select_one(".consumption-history-table table") or s.select_one("table")
-        if not table:
-            return None
-        header_meter_names: List[str] = []
-        head_rows = table.select("thead tr")
-        if len(head_rows) >= 2:
-            for th in head_rows[1].find_all("th")[1:]:
-                name = th.get_text(strip=True)
-                if name:
-                    header_meter_names.append(name)
-        body_row = table.select_one("tbody tr")
-        if not body_row:
-            return None
-        tds = body_row.find_all("td")
-        if len(tds) < 3:
-            return None
-        month = tds[0].get_text(strip=True)
-        values = [td.get_text(strip=True) for td in tds[1:]]
-        meters: Dict[str, Dict[str, Optional[float]]] = {}
-        i = 0
-        m_idx = 0
-        while i + 1 < len(values):
-            index_val = _maybe_float(values[i])
-            consum_val = _maybe_float(values[i+1])
-            meter_name = header_meter_names[m_idx] if m_idx < len(header_meter_names) else f"Contor {m_idx+1}"
-            meters[meter_name] = {"index": index_val, "consum": consum_val}
-            i += 2
-            m_idx += 1
-        total_cold = sum([v.get("consum") or 0 for v in meters.values()]) if meters else None
-        return WaterEntry(month=month, total_cold_consum=total_cold, submitted_at=None, meters=meters)
+def _fetch_water_latest(self) -> Optional[WaterEntry]:
+    html = self._get("https://tsiasi.ro/contul-meu/consum-apa")
+    s = BeautifulSoup(html, "html.parser")
+    table = s.select_one("table")
+    if not table:
+        return None
+
+    head_meters = []
+    for th in table.select("thead tr:nth-of-type(2) th"):
+        label = th.get_text(strip=True)
+        if not label:
+            ci = th.select_one(".content-info")
+            label = ci.get_text(strip=True) if ci else ""
+        if label:
+            head_meters.append(label)
+
+    row = table.select_one("tbody tr")
+    if not row:
+        return None
+    tds = row.find_all("td")
+    if not tds:
+        return None
+
+    def _norm(x: str) -> str:
+        x = x.strip()
+        if x.lower().endswith(" ct"):
+            x = x[:-3].strip()
+        trans = str.maketrans({"ă":"a","â":"a","î":"i","ș":"s","ş":"s","ț":"t","ţ":"t",
+                               "Ă":"A","Â":"A","Î":"I","Ș":"S","Ş":"S","Ț":"T","Ţ":"T"})
+        x = x.translate(trans)
+        x_low = x.lower()
+        if x_low == "baie":
+            return "Baie"
+        if x_low == "bucatarie":
+            return "Bucatarie"
+        return x[:1].upper() + x[1:] if x else x
+
+    month = tds[0].get_text(strip=True)
+    meters = []
+    pos = 1
+    mcount = max(0, (len(tds) - 1) // 2)
+    for i in range(mcount):
+        idx_val = (tds[pos].get_text(strip=True) if pos < len(tds) else "")
+        cns_val = (tds[pos+1].get_text(strip=True) if (pos+1) < len(tds) else "")
+        pos += 2
+        raw_name = head_meters[i] if i < len(head_meters) else f"Contor {i+1}"
+        mname = _norm(raw_name)
+        meters.append({
+            "name": mname,
+            "index": _maybe_float(idx_val),
+            "consum": _maybe_float(cns_val),
+        })
+
+    try:
+        total_consum = sum((m["consum"] or 0.0) for m in meters)
+    except Exception:
+        total_consum = None
+
+    return WaterEntry(month=month, cold=None, hot=None, submitted_at=None,
+                      meters=meters, total_consum=total_consum)
 
     def _get(self, url: str) -> str:
         r = self._s.get(url, timeout=self._timeout)
