@@ -1,15 +1,14 @@
 {
   "domain": "termoservice",
-  "name": "TermoService Iași",
+  "name": "TermoService Iasi",
   "version": "0.2.9",
-  "documentation": "https://github.com/USER/termoservice-ha",
+  "documentation": "https://github.com/gabrielcolceriu/termoservice",
   "requirements": [
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.2"
   ],
-  "codeowners": ["@your-github"],
+  "codeowners": ["@gabrielcolceriu"],
   "config_flow": true,
-  "iot_class": "cloud_polling",
-  "icon": "https://tsiasi.ro/images/favicon/favicon-32x32.png",
-  "logo": "https://tsiasi.ro/images/logo-header.png"
+  "iot_class": "cloud_polling"
 }
+
