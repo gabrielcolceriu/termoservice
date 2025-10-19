@@ -5,20 +5,21 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN, CONF_EMAIL, CONF_PASSWORD
-from .termoservice_client import TermoServiceClient
 
 
 class TermoServiceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
-        errors = {}
+        errors: dict[str, str] = {}
+
         if user_input is not None:
             email = user_input[CONF_EMAIL]
             password = user_input[CONF_PASSWORD]
 
-            client = TermoServiceClient(email, password)
             try:
+                from .termoservice_client import TermoServiceClient  # lazy import
+                client = TermoServiceClient(email, password)
                 await self.hass.async_add_executor_job(client.login)
             except Exception:
                 errors["base"] = "cannot_connect"
