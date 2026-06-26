@@ -18,7 +18,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, add_entitie
             TermoLastPaymentAmountSensor(coordinator, base_unique, acc_idx=idx),
             TermoLastPaymentDateSensor(coordinator, base_unique, acc_idx=idx),
             TermoWaterColdLatestSensor(coordinator, base_unique, acc_idx=idx),
-            TermoWaterColdTotalSensor(coordinator, base_unique, acc_idx=idx),
             TermoWaterSubmittedAtSensor(coordinator, base_unique, acc_idx=idx),
         ])
         meters = (acc.water_latest.meters if acc.water_latest else {}) or {}
@@ -173,11 +172,3 @@ class TermoWaterMeterConsumSensor(_BaseTermoSensor):
         return data.get("consum")
 
 
-class TermoWaterColdTotalSensor(_BaseTermoSensor):
-    @property
-    def name(self) -> str:
-        return "Apa rece – Total – Consum"
-    @property
-    def native_value(self):
-        acc = (self.coordinator.data or [])[self._acc_idx]
-        return None if not acc.water_latest else acc.water_latest.total_consum
