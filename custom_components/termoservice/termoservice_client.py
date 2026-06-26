@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
 
 import requests
 from bs4 import BeautifulSoup
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class PaymentRow:
     def __init__(self, month: str, issued_at: str, monthly_cost: float, arrears: float, penalty: float, details_url: Optional[str]):
@@ -18,11 +19,13 @@ class PaymentRow:
         self.penalty = penalty
         self.details_url = details_url
 
+
 class PaymentEvent:
     def __init__(self, date: str, amount: float, method: Optional[str]):
         self.date = date
         self.amount = amount
         self.method = method
+
 
 @dataclass
 class WaterEntry:
@@ -30,8 +33,9 @@ class WaterEntry:
     cold: Optional[float]
     hot: Optional[float]
     submitted_at: Optional[str]
-    meters: Optional[list] = None
+    meters: Optional[Dict[str, Dict[str, Optional[float]]]] = None
     total_consum: Optional[float] = None
+
 
 class AccountSummary:
     def __init__(self, apartment_name: str, as_of: str, total_to_pay: float, items: Dict[str, float], monthly_rows: List[PaymentRow], last_payment: Optional[PaymentEvent], water_latest: Optional[WaterEntry]):
@@ -42,6 +46,7 @@ class AccountSummary:
         self.monthly_rows = monthly_rows
         self.last_payment = last_payment
         self.water_latest = water_latest
+
 
 class TermoServiceClient:
     def __init__(self, email: str, password: str, timeout: int = 20) -> None:
@@ -127,71 +132,78 @@ class TermoServiceClient:
         method = tds[2].get_text(strip=True) if len(tds) > 2 else None
         return PaymentEvent(date=date, amount=amount, method=method)
 
-def _fetch_water_latest(self) -> Optional[WaterEntry]:
-    html = self._get("https://tsiasi.ro/contul-meu/consum-apa")
-    s = BeautifulSoup(html, "html.parser")
-    table = s.select_one("table")
-    if not table:
-        return None
+    def _fetch_water_latest(self) -> Optional[WaterEntry]:
+        html = self._get("https://tsiasi.ro/contul-meu/consum-apa")
+        s = BeautifulSoup(html, "html.parser")
+        table = s.select_one("table")
+        if not table:
+            return None
 
-    head_meters = []
-    for th in table.select("thead tr:nth-of-type(2) th"):
-        label = th.get_text(strip=True)
-        if not label:
-            ci = th.select_one(".content-info")
-            label = ci.get_text(strip=True) if ci else ""
-        if label:
-            head_meters.append(label)
+        head_meters = []
+        for th in table.select("thead tr:nth-of-type(2) th"):
+            label = th.get_text(strip=True)
+            if not label:
+                ci = th.select_one(".content-info")
+                label = ci.get_text(strip=True) if ci else ""
+            if label:
+                head_meters.append(label)
 
-    row = table.select_one("tbody tr")
-    if not row:
-        return None
-    tds = row.find_all("td")
-    if not tds:
-        return None
+        row = table.select_one("tbody tr")
+        if not row:
+            return None
+        tds = row.find_all("td")
+        if not tds:
+            return None
 
-    def _norm(x: str) -> str:
-        x = x.strip()
-        if x.lower().endswith(" ct"):
-            x = x[:-3].strip()
-        trans = str.maketrans({"ă":"a","â":"a","î":"i","ș":"s","ş":"s","ț":"t","ţ":"t",
-                               "Ă":"A","Â":"A","Î":"I","Ș":"S","Ş":"S","Ț":"T","Ţ":"T"})
-        x = x.translate(trans)
-        x_low = x.lower()
-        if x_low == "baie":
-            return "Baie"
-        if x_low == "bucatarie":
-            return "Bucatarie"
-        return x[:1].upper() + x[1:] if x else x
+        month = tds[0].get_text(strip=True)
+        meters: Dict[str, Dict[str, Optional[float]]] = {}
+        pos = 1
+        mcount = max(0, (len(tds) - 1) // 2)
+        for i in range(mcount):
+            idx_val = tds[pos].get_text(strip=True) if pos < len(tds) else ""
+            cns_val = tds[pos + 1].get_text(strip=True) if (pos + 1) < len(tds) else ""
+            pos += 2
+            raw_name = head_meters[i] if i < len(head_meters) else f"Contor {i + 1}"
+            mname = _norm(raw_name)
+            meters[mname] = {
+                "index": _maybe_float(idx_val),
+                "consum": _maybe_float(cns_val),
+            }
 
-    month = tds[0].get_text(strip=True)
-    meters = []
-    pos = 1
-    mcount = max(0, (len(tds) - 1) // 2)
-    for i in range(mcount):
-        idx_val = (tds[pos].get_text(strip=True) if pos < len(tds) else "")
-        cns_val = (tds[pos+1].get_text(strip=True) if (pos+1) < len(tds) else "")
-        pos += 2
-        raw_name = head_meters[i] if i < len(head_meters) else f"Contor {i+1}"
-        mname = _norm(raw_name)
-        meters.append({
-            "name": mname,
-            "index": _maybe_float(idx_val),
-            "consum": _maybe_float(cns_val),
-        })
+        try:
+            total_consum = sum((v.get("consum") or 0.0) for v in meters.values())
+        except Exception:
+            total_consum = None
 
-    try:
-        total_consum = sum((m["consum"] or 0.0) for m in meters)
-    except Exception:
-        total_consum = None
-
-    return WaterEntry(month=month, cold=None, hot=None, submitted_at=None,
-                      meters=meters, total_consum=total_consum)
+        return WaterEntry(
+            month=month,
+            cold=total_consum,
+            hot=None,
+            submitted_at=None,
+            meters=meters,
+            total_consum=total_consum,
+        )
 
     def _get(self, url: str) -> str:
         r = self._s.get(url, timeout=self._timeout)
         r.raise_for_status()
         return r.text
+
+
+def _norm(x: str) -> str:
+    x = x.strip()
+    if x.lower().endswith(" ct"):
+        x = x[:-3].strip()
+    trans = str.maketrans({"ă": "a", "â": "a", "î": "i", "ș": "s", "ş": "s", "ț": "t", "ţ": "t",
+                           "Ă": "A", "Â": "A", "Î": "I", "Ș": "S", "Ş": "S", "Ț": "T", "Ţ": "T"})
+    x = x.translate(trans)
+    x_low = x.lower()
+    if x_low == "baie":
+        return "Baie"
+    if x_low == "bucatarie":
+        return "Bucatarie"
+    return x[:1].upper() + x[1:] if x else x
+
 
 def _to_float(txt: str) -> float:
     t = txt.replace(" Lei", "").replace("RON", "").replace(" ", "").replace(",", ".")
@@ -199,6 +211,7 @@ def _to_float(txt: str) -> float:
         return float(t)
     except Exception:
         return 0.0
+
 
 def _maybe_float(txt: str) -> Optional[float]:
     t = (txt or "").replace(" ", "").replace(",", ".")
