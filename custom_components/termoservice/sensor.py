@@ -65,6 +65,8 @@ class _BaseTermoSensor(SensorEntity):
         await self.coordinator.async_request_refresh()
 
 class TermoTotalToPaySensor(_BaseTermoSensor):
+    _attr_icon = "mdi:cash-clock"
+
     @property
     def name(self) -> str:
         return "Total de plată"
@@ -77,6 +79,8 @@ class TermoTotalToPaySensor(_BaseTermoSensor):
         return "RON"
 
 class TermoLastMonthCostSensor(_BaseTermoSensor):
+    _attr_icon = "mdi:radiator"
+
     @property
     def name(self) -> str:
         return "Cost întreținere (ultima lună)"
@@ -91,6 +95,8 @@ class TermoLastMonthCostSensor(_BaseTermoSensor):
         return "RON"
 
 class TermoUnpaidCountSensor(_BaseTermoSensor):
+    _attr_icon = "mdi:format-list-numbered"
+
     @property
     def name(self) -> str:
         return "Număr luni listate"
@@ -100,6 +106,8 @@ class TermoUnpaidCountSensor(_BaseTermoSensor):
         return len(acc.monthly_rows)
 
 class TermoLastPaymentAmountSensor(_BaseTermoSensor):
+    _attr_icon = "mdi:cash-check"
+
     @property
     def name(self) -> str:
         return "Ultima plată – sumă"
@@ -121,6 +129,8 @@ class TermoLastPaymentAmountSensor(_BaseTermoSensor):
         }
 
 class TermoLastPaymentDateSensor(_BaseTermoSensor):
+    _attr_icon = "mdi:calendar-check"
+
     @property
     def name(self) -> str:
         return "Ultima plată – dată"
@@ -130,6 +140,8 @@ class TermoLastPaymentDateSensor(_BaseTermoSensor):
         return None if not acc.last_payment else acc.last_payment.date
 
 class TermoWaterColdLatestSensor(_BaseTermoSensor):
+    _attr_icon = "mdi:water-pump"
+
     @property
     def name(self) -> str:
         return "Apa rece – consum total (ultimul rand)"
@@ -155,6 +167,8 @@ class TermoWaterMeterIndexSensor(_BaseTermoSensor):
         if x.lower() == "baie":
             x = "Baie"
         return x
+    _attr_icon = "mdi:counter"
+
     @property
     def name(self) -> str:
         m = self._clean(self._meter)
@@ -181,6 +195,8 @@ class TermoWaterMeterConsumSensor(_BaseTermoSensor):
         if x.lower() == "baie":
             x = "Baie"
         return x
+    _attr_icon = "mdi:water"
+
     @property
     def name(self) -> str:
         m = self._clean(self._meter)
@@ -194,6 +210,8 @@ class TermoWaterMeterConsumSensor(_BaseTermoSensor):
 
 
 class TermoTotalPaidCurrentYearSensor(_BaseTermoSensor):
+    _attr_icon = "mdi:cash-multiple"
+
     @property
     def name(self) -> str:
         return f"Total plătit {date.today().year}"
@@ -210,6 +228,8 @@ class TermoTotalPaidCurrentYearSensor(_BaseTermoSensor):
 
 
 class TermoPaymentHistorySensor(_BaseTermoSensor):
+    _attr_icon = "mdi:history"
+
     @property
     def name(self) -> str:
         return "Istoric plăți"
@@ -268,6 +288,29 @@ class TermoDebitItemSensor(_BaseTermoSensor):
     @property
     def name(self) -> str:
         return self._item_key.rstrip("*").strip()
+
+    @property
+    def icon(self) -> str:
+        key = self._item_key.lower()
+        if any(w in key for w in ("caldura", "caldură", "incalzire", "încălzire", "termie")):
+            return "mdi:radiator"
+        if any(w in key for w in ("apa calda", "apă caldă", "acm")):
+            return "mdi:water-boiler"
+        if any(w in key for w in ("apa rece", "apă rece")):
+            return "mdi:water"
+        if any(w in key for w in ("gunoi", "deseuri", "deșeuri", "salubr")):
+            return "mdi:trash-can-outline"
+        if any(w in key for w in ("ascensor", "lift")):
+            return "mdi:elevator-passenger"
+        if any(w in key for w in ("electric", "energie", "curent")):
+            return "mdi:lightning-bolt"
+        if "gaz" in key:
+            return "mdi:gas-burner"
+        if any(w in key for w in ("fond", "reparatii", "reparații")):
+            return "mdi:tools"
+        if any(w in key for w in ("administr", "admin")):
+            return "mdi:account-wrench"
+        return "mdi:clipboard-list-outline"
 
     @property
     def native_value(self):
