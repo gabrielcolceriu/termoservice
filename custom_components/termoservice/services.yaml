@@ -1,0 +1,24 @@
+trimite_index:
+  name: Trimite index apă
+  description: Trimite indexul contoarelor de apă rece pe tsiasi.ro (doar în perioada de trimitere).
+  fields:
+    index_baie:
+      name: Index Baie
+      description: Indexul curent al contorului de la baie (ex. 607).
+      required: true
+      example: 607
+      selector:
+        number:
+          min: 0
+          max: 99999
+          step: 1
+    index_bucatarie:
+      name: Index Bucătărie
+      description: Indexul curent al contorului de la bucătărie (ex. 657).
+      required: true
+      example: 657
+      selector:
+        number:
+          min: 0
+          max: 99999
+          step: 1

@@ -6,6 +6,17 @@ from homeassistant.helpers.entity import DeviceInfo
 from .const import DOMAIN
 from .coordinator import TermoServiceCoordinator
 
+def _slug(text: str) -> str:
+    trans = str.maketrans({"ă":"a","â":"a","î":"i","ș":"s","ş":"s","ț":"t","ţ":"t",
+                           "Ă":"A","Â":"A","Î":"I","Ș":"S","Ş":"S","Ț":"T","Ţ":"T"})
+    return (text.translate(trans)
+                .lower()
+                .replace("/", "_")
+                .replace("*", "")
+                .replace(" ", "_")
+                .strip("_"))
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, add_entities) -> None:
     coordinator: TermoServiceCoordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
@@ -18,8 +29,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, add_entitie
             TermoLastPaymentAmountSensor(coordinator, base_unique, acc_idx=idx),
             TermoLastPaymentDateSensor(coordinator, base_unique, acc_idx=idx),
             TermoWaterColdLatestSensor(coordinator, base_unique, acc_idx=idx),
-            TermoWaterSubmittedAtSensor(coordinator, base_unique, acc_idx=idx),
         ])
+        entities.extend([
+            TermoWaterSubmissionSensor(coordinator, base_unique, acc_idx=idx),
+        ])
+        for item_key in (acc.items or {}):
+            entities.append(TermoDebitItemSensor(
+                coordinator, f"{base_unique}_item_{_slug(item_key)}", acc_idx=idx, item_key=item_key,
+            ))
         meters = (acc.water_latest.meters if acc.water_latest else {}) or {}
         for mname, data in list(meters.items())[:4]:
             norm = mname.lower().replace(" ", "_")
@@ -109,15 +126,6 @@ class TermoWaterColdLatestSensor(_BaseTermoSensor):
         return None if not acc.water_latest else acc.water_latest.total_consum
 
 
-class TermoWaterSubmittedAtSensor(_BaseTermoSensor):
-    @property
-    def name(self) -> str:
-        return "Consum apă – transmis la"
-    @property
-    def native_value(self):
-        acc = (self.coordinator.data or [])[self._acc_idx]
-        return None if not acc.water_latest else acc.water_latest.submitted_at
-
 class TermoWaterMeterIndexSensor(_BaseTermoSensor):
     def __init__(self, coordinator, unique_base, acc_idx, meter_name):
         
@@ -170,5 +178,50 @@ class TermoWaterMeterConsumSensor(_BaseTermoSensor):
         meters = (acc.water_latest.meters if acc.water_latest else {}) or {}
         data = meters.get(self._meter, {})
         return data.get("consum")
+
+
+class TermoWaterSubmissionSensor(_BaseTermoSensor):
+    @property
+    def name(self) -> str:
+        return "Trimitere index — perioadă"
+
+    @property
+    def native_value(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        if not acc.water_latest or not acc.water_latest.submission_period:
+            return "Închisă"
+        return acc.water_latest.submission_period
+
+    @property
+    def extra_state_attributes(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        open_ = acc.water_latest.submission_open if acc.water_latest else False
+        return {"deschisa": open_}
+
+    @property
+    def icon(self) -> str:
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        open_ = acc.water_latest.submission_open if acc.water_latest else False
+        return "mdi:water-check" if open_ else "mdi:water-off"
+
+
+class TermoDebitItemSensor(_BaseTermoSensor):
+    def __init__(self, coordinator, unique_base, acc_idx, item_key):
+        super().__init__(coordinator, unique_base, acc_idx)
+        self._item_key = item_key
+
+    @property
+    def name(self) -> str:
+        return self._item_key.rstrip("*").strip()
+
+    @property
+    def native_value(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        val = (acc.items or {}).get(self._item_key, 0.0)
+        return round(val, 2)
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return "RON"
 
 
