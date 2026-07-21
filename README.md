@@ -12,14 +12,14 @@
 </p>
 
 <p align="center">
-  Monitorizează sumele de plată și consumul de apă direct din contul tău <strong>tsiasi.ro</strong> — în Home Assistant.
+  Integrare care se conectează la portalul <strong>tsiasi.ro</strong> și aduce sumele de plată și consumul de apă direct în Home Assistant.
 </p>
 
 ---
 
 ## Ce face această integrare?
 
-Conectează Home Assistant la portalul **[tsiasi.ro](https://tsiasi.ro)** al furnizorului de servicii Termo Service Iași S.A. și creează automat senzori pentru:
+Se conectează la portalul **[tsiasi.ro](https://tsiasi.ro)** al furnizorului de servicii Termo Service Iași S.A. și creează automat senzori pentru:
 
 - 💰 **Sume de plată** — fond rulment, fond reparații, penalități, total de plată
 - 💳 **Istoricul plăților** — ultimele plăți efectuate, total plătit în anul curent
