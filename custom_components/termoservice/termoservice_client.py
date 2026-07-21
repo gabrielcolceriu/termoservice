@@ -27,10 +27,11 @@ class PaymentRow:
 
 
 class PaymentEvent:
-    def __init__(self, date: str, amount: float, method: Optional[str]):
+    def __init__(self, date: str, amount: float, method: Optional[str], destination: Optional[str] = None):
         self.date = date
         self.amount = amount
         self.method = method
+        self.destination = destination
 
 
 @dataclass
@@ -47,13 +48,14 @@ class WaterEntry:
 
 class AccountSummary:
     def __init__(self, apartment_name: str, as_of: str, total_to_pay: float, items: Dict[str, float],
-                 monthly_rows: List[PaymentRow], last_payment: Optional[PaymentEvent], water_latest: Optional[WaterEntry]):
+                 monthly_rows: List[PaymentRow], payments: List[PaymentEvent], water_latest: Optional[WaterEntry]):
         self.apartment_name = apartment_name
         self.as_of = as_of
         self.total_to_pay = total_to_pay
         self.items = items
         self.monthly_rows = monthly_rows
-        self.last_payment = last_payment
+        self.payments = payments
+        self.last_payment = payments[0] if payments else None
         self.water_latest = water_latest
 
 
@@ -100,7 +102,7 @@ class TermoServiceClient:
                 monthly_rows = []
                 as_of = ""
 
-            last_payment = self._fetch_last_payment()
+            payments = self._fetch_payments()
             water_latest = self._fetch_water_latest()
             result.append(AccountSummary(
                 apartment_name=apartment_name,
@@ -108,7 +110,7 @@ class TermoServiceClient:
                 total_to_pay=total_to_pay,
                 items=items,
                 monthly_rows=monthly_rows,
-                last_payment=last_payment,
+                payments=payments,
                 water_latest=water_latest,
             ))
 
@@ -187,19 +189,21 @@ class TermoServiceClient:
             _LOGGER.warning("Eroare la apelul Livewire: %s", exc)
             return None
 
-    def _fetch_last_payment(self) -> Optional[PaymentEvent]:
+    def _fetch_payments(self) -> List[PaymentEvent]:
         html = self._get("https://tsiasi.ro/contul-meu/istoric-plati")
         s = BeautifulSoup(html, "html.parser")
-        row = s.select_one("table tbody tr")
-        if not row:
-            return None
-        tds = row.find_all("td")
-        if len(tds) < 2:
-            return None
-        date = tds[0].get_text(strip=True)
-        amount = _to_float(tds[1].get_text(strip=True))
-        method = tds[2].get_text(strip=True) if len(tds) > 2 else None
-        return PaymentEvent(date=date, amount=amount, method=method)
+        result: List[PaymentEvent] = []
+        for tr in s.select("table tbody tr"):
+            tds = tr.find_all("td")
+            if len(tds) < 2:
+                continue
+            result.append(PaymentEvent(
+                date=tds[0].get_text(strip=True),
+                amount=_to_float(tds[1].get_text(strip=True)),
+                destination=tds[2].get_text(strip=True) if len(tds) > 2 else None,
+                method=tds[3].get_text(strip=True) if len(tds) > 3 else None,
+            ))
+        return result
 
     def _fetch_water_latest(self) -> Optional[WaterEntry]:
         html = self._get("https://tsiasi.ro/contul-meu/consum-apa")

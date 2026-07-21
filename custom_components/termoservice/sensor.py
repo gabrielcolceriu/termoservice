@@ -1,4 +1,6 @@
 
+from datetime import date
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -28,6 +30,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, add_entitie
             TermoUnpaidCountSensor(coordinator, base_unique, acc_idx=idx),
             TermoLastPaymentAmountSensor(coordinator, base_unique, acc_idx=idx),
             TermoLastPaymentDateSensor(coordinator, base_unique, acc_idx=idx),
+            TermoTotalPaidCurrentYearSensor(coordinator, base_unique, acc_idx=idx),
+            TermoPaymentHistorySensor(coordinator, base_unique, acc_idx=idx),
             TermoWaterColdLatestSensor(coordinator, base_unique, acc_idx=idx),
         ])
         entities.extend([
@@ -106,6 +110,15 @@ class TermoLastPaymentAmountSensor(_BaseTermoSensor):
     @property
     def unit_of_measurement(self) -> str:
         return "RON"
+    @property
+    def extra_state_attributes(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        if not acc.last_payment:
+            return {}
+        return {
+            "destinatie": acc.last_payment.destination,
+            "tip_plata": acc.last_payment.method,
+        }
 
 class TermoLastPaymentDateSensor(_BaseTermoSensor):
     @property
@@ -178,6 +191,48 @@ class TermoWaterMeterConsumSensor(_BaseTermoSensor):
         meters = (acc.water_latest.meters if acc.water_latest else {}) or {}
         data = meters.get(self._meter, {})
         return data.get("consum")
+
+
+class TermoTotalPaidCurrentYearSensor(_BaseTermoSensor):
+    @property
+    def name(self) -> str:
+        return f"Total plătit {date.today().year}"
+
+    @property
+    def native_value(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        year = str(date.today().year)
+        return round(sum(p.amount for p in (acc.payments or []) if p.date[-4:] == year), 2)
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return "RON"
+
+
+class TermoPaymentHistorySensor(_BaseTermoSensor):
+    @property
+    def name(self) -> str:
+        return "Istoric plăți"
+
+    @property
+    def native_value(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        return len(acc.payments or [])
+
+    @property
+    def extra_state_attributes(self):
+        acc = (self.coordinator.data or [])[self._acc_idx]
+        return {
+            "plati": [
+                {
+                    "data": p.date,
+                    "suma": p.amount,
+                    "destinatie": p.destination,
+                    "tip": p.method,
+                }
+                for p in (acc.payments or [])
+            ]
+        }
 
 
 class TermoWaterSubmissionSensor(_BaseTermoSensor):
