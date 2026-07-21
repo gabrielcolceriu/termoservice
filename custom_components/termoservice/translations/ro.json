@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurare TermoService",
+        "data": {
+          "email": "Adresă email",
+          "password": "Parolă"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurare TermoService",
+        "description": "Actualizează credențialele contului tsiasi.ro.",
+        "data": {
+          "email": "Adresă email",
+          "password": "Parolă nouă"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nu s-a putut conecta la tsiasi.ro. Verificați email-ul și parola."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opțiuni TermoService",
+        "data": {
+          "scan_interval": "Interval de actualizare (minute)"
+        },
+        "data_description": {
+          "scan_interval": "Cât de des să fie verificate datele (minim 30, maxim 1440 minute). Recomandat: 120 minute."
+        }
+      }
+    }
+  }
+}

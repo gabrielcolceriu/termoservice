@@ -10,8 +10,8 @@ from .termoservice_client import TermoServiceClient, AccountSummary
 _LOGGER = logging.getLogger(__name__)
 
 class TermoServiceCoordinator(DataUpdateCoordinator[List[AccountSummary]]):
-    def __init__(self, hass: HomeAssistant, client: TermoServiceClient):
-        super().__init__(hass, _LOGGER, name="termoservice", update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL))
+    def __init__(self, hass: HomeAssistant, client: TermoServiceClient, interval_minutes: int = DEFAULT_SCAN_INTERVAL):
+        super().__init__(hass, _LOGGER, name="termoservice", update_interval=timedelta(minutes=interval_minutes))
         self.client = client
 
     async def _async_update_data(self):
