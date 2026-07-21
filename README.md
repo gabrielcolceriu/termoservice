@@ -1,84 +1,105 @@
 # TermoService Iași — Home Assistant Integration
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+<p align="center">
+  <img src="custom_components/termoservice/brand/icon.png" alt="TermoService" width="120">
+</p>
 
-Integrare custom pentru Home Assistant care conectează direct la portalul **tsiasi.ro** al furnizorului de servicii Termo Service Iași S.A.
+<p align="center">
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge" alt="HACS: Custom"></a>
+  <img src="https://img.shields.io/badge/version-0.5.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/HA-2023.1%2B-brightgreen?style=for-the-badge&logo=home-assistant" alt="Home Assistant">
+  <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=for-the-badge" alt="License">
+</p>
+
+<p align="center">
+  Monitorizează sumele de plată și consumul de apă direct din contul tău <strong>tsiasi.ro</strong> — în Home Assistant.
+</p>
 
 ---
 
-## Funcționalități
+## Ce face această integrare?
 
-- Autentificare sigură pe tsiasi.ro cu email + parolă
-- **Reconfigurare din UI** — schimbi email/parolă fără să ștergi integrarea
-- **Interval de refresh configurabil** din UI (30–1440 minute, default 120 min)
-- Senzori actualizați automat
+Conectează Home Assistant la portalul **[tsiasi.ro](https://tsiasi.ro)** al furnizorului de servicii Termo Service Iași S.A. și creează automat senzori pentru:
+
+- 💰 **Sume de plată** — fond rulment, fond reparații, penalități, total de plată
+- 💳 **Istoricul plăților** — ultimele plăți efectuate, total plătit în anul curent
+- 💧 **Consum apă rece** — index și consum per contor (baie / bucătărie)
+- 📅 **Perioadă trimitere index** — detectează automat fereastra de citire și permite trimiterea indexului din HA
 
 ---
 
 ## Senzori disponibili
 
-### Sume de plată
+### 💰 Sume de plată
+
 | Senzor | Descriere | Unitate |
-|--------|-----------|---------|
-| Total de plată | Sold curent | RON |
-| Cost întreținere (ultima lună) | Costul lunii curente | RON |
+|--------|-----------|:-------:|
+| Total de plată | Sold curent de plată | RON |
+| Cost întreținere (ultima lună) | Costul din ultima factură | RON |
 | Întreținere/Restanță | Debit curent | RON |
 | Penalitate | Penalități acumulate | RON |
-| Fond rulment | Fond rulment | RON |
-| Fond reparații | Fond reparații | RON |
+| Fond rulment | Contribuție fond rulment | RON |
+| Fond reparații | Contribuție fond reparații | RON |
 
-### Plăți
-| Senzor | Descriere |
-|--------|-----------|
-| Ultima plată – sumă | Suma ultimei plăți (RON) + atribute: destinație, tip plată |
-| Ultima plată – dată | Data ultimei plăți |
-| Total plătit YYYY | Total plăți efectuate în anul curent (RON) |
-| Istoric plăți | Număr plăți + atribut JSON cu istoricul complet |
+### 💳 Plăți
 
-### Apă rece
+| Senzor | Descriere | Atribute |
+|--------|-----------|---------|
+| Ultima plată – sumă | Suma ultimei plăți (RON) | `destinatie`, `tip_plata` |
+| Ultima plată – dată | Data ultimei plăți | — |
+| Total plătit YYYY | Total plăți efectuate în anul curent | — |
+| Istoric plăți | Număr intrări în istoric | `plati` (JSON: data, suma, destinatie, tip) |
+
+### 💧 Apă rece
+
 | Senzor | Descriere |
 |--------|-----------|
 | Apa rece – Baie – Index | Indexul contorului de la baie |
-| Apa rece – Baie – Consum | Consumul baie (ultima lună) |
+| Apa rece – Baie – Consum | Consumul baie (ultima lună înregistrată) |
 | Apa rece – Bucătărie – Index | Indexul contorului de la bucătărie |
-| Apa rece – Bucătărie – Consum | Consumul bucătărie (ultima lună) |
-| Apa rece – consum total | Total consum apă (ultima lună) |
-| Trimitere index — perioadă | Intervalul activ de trimitere (sau „Închisă") |
+| Apa rece – Bucătărie – Consum | Consumul bucătărie (ultima lună înregistrată) |
+| Apa rece – consum total | Total consum apă (suma contoare) |
+| Trimitere index — perioadă | Intervalul activ de citire sau `Închisă` |
 
 ---
 
-## Instalare via HACS
+## Instalare
 
-1. În HACS → **Custom Repositories** adaugă: `https://github.com/gabrielcolceriu/termoservice`
-2. Categorie: **Integration**
-3. Instalează **TermoService Iași**
-4. Repornește Home Assistant
-5. **Settings → Devices & Services → + Add Integration → TermoService Iasi**
-6. Introdu email-ul și parola de la tsiasi.ro
+### Prin HACS (recomandat)
 
----
+1. În HACS → **⋮ → Custom Repositories**
+2. URL: `https://github.com/gabrielcolceriu/termoservice` — Categorie: **Integration**
+3. Instalează **TermoService Iași** și repornește Home Assistant
 
-## Instalare manuală
+### Manual
 
-Copiază folderul `custom_components/termoservice` în directorul `config/custom_components/`, repornește HA și adaugă integrarea din UI.
+Copiază folderul `custom_components/termoservice/` în `config/custom_components/` și repornește HA.
 
 ---
 
 ## Configurare
 
-### Interval de refresh
-**Settings → Devices & Services → TermoService → ⚙️ → Interval de actualizare**
+### Adăugare integrare
 
-Default: 120 minute. Range: 30–1440 minute.
+**Settings → Devices & Services → + Add Integration → TermoService Iasi**
+
+Introdu email-ul și parola de la [tsiasi.ro](https://tsiasi.ro).
+
+### Interval de actualizare
+
+**Settings → Devices & Services → TermoService → ⚙️**
+
+Setează cât de des să fie preluate datele (30–1440 minute, implicit **120 minute**). Datele se schimbă lunar, deci o valoare mare e mai prietenoasă cu serverul furnizorului.
 
 ### Schimbare credențiale
+
 **Settings → Devices & Services → TermoService → ⋮ → Reconfigurare**
 
 ---
 
 ## Serviciu: trimitere index apă
 
-Disponibil în perioada de citire (de obicei 20–25 ale lunii):
+Disponibil în perioada de citire (de obicei 20–25 ale lunii). Valoarea senzorului **Trimitere index — perioadă** va fi diferită de `Închisă` când fereastra e activă.
 
 ```yaml
 service: termoservice.trimite_index
@@ -89,10 +110,20 @@ data:
 
 ---
 
-## Disclaimer
+## Cerințe
 
-Această integrare nu este asociată oficial cu Termo Service Iași S.A. Datele sunt citite exclusiv din contul personal de pe tsiasi.ro folosind metode publice. Folosește integrarea responsabil, respectând termenii și condițiile furnizorului.
+- Home Assistant 2023.1+
+- Cont activ pe [tsiasi.ro](https://tsiasi.ro)
+- Dependențe Python (instalate automat): `requests`, `beautifulsoup4`
 
 ---
 
-**Autor:** Gabriel Colceriu — Iași, România
+## Disclaimer
+
+Această integrare **nu este asociată oficial** cu Termo Service Iași S.A. Datele sunt preluate exclusiv din contul personal al utilizatorului de pe tsiasi.ro, prin metode publice (fără API oficial). Utilizează integrarea responsabil, respectând termenii și condițiile furnizorului.
+
+---
+
+<p align="center">
+  Dezvoltat cu ❤️ de <a href="https://github.com/gabrielcolceriu">Gabriel Colceriu</a> — Iași, România
+</p>
