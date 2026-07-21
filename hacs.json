@@ -1,6 +1,5 @@
 {
   "name": "TermoService Iași",
   "content_in_root": false,
-  "homeassistant": "2023.1.0",
-  "filename": "termoservice.zip"
+  "homeassistant": "2023.1.0"
 }

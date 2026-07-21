@@ -1,100 +1,98 @@
-🏢 TermoService Iași – Home Assistant Integration
+# TermoService Iași — Home Assistant Integration
 
-TermoService Iași este o integrare custom pentru Home Assistant
-, care permite conectarea directă la portalul tsiasi.ro
- al furnizorului de servicii de administrare imobile Termo Service Iași S.A.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 
-Integrarea extrage automat datele din contul tău de utilizator (email și parolă) și le transformă în senzori Home Assistant, oferindu-ți o imagine de ansamblu asupra cheltuielilor de întreținere și a consumului de apă rece — direct în dashboardul tău smart home.
+Integrare custom pentru Home Assistant care conectează direct la portalul **tsiasi.ro** al furnizorului de servicii Termo Service Iași S.A.
 
-🔧 Funcționalități
+---
 
-Autentificare sigură pe tsiasi.ro
- cu email + parolă.
+## Funcționalități
 
-Citire automată a:
+- Autentificare sigură pe tsiasi.ro cu email + parolă
+- **Reconfigurare din UI** — schimbi email/parolă fără să ștergi integrarea
+- **Interval de refresh configurabil** din UI (30–1440 minute, default 120 min)
+- Senzori actualizați automat
 
-✅ Sume de plată curente
+---
 
-✅ Istoric plăți
+## Senzori disponibili
 
-✅ Consum apă rece (Baie + Bucătărie, Index + Consum)
+### Sume de plată
+| Senzor | Descriere | Unitate |
+|--------|-----------|---------|
+| Total de plată | Sold curent | RON |
+| Cost întreținere (ultima lună) | Costul lunii curente | RON |
+| Întreținere/Restanță | Debit curent | RON |
+| Penalitate | Penalități acumulate | RON |
+| Fond rulment | Fond rulment | RON |
+| Fond reparații | Fond reparații | RON |
 
-✅ Total consum apă (ultimul rând)
+### Plăți
+| Senzor | Descriere |
+|--------|-----------|
+| Ultima plată – sumă | Suma ultimei plăți (RON) + atribute: destinație, tip plată |
+| Ultima plată – dată | Data ultimei plăți |
+| Total plătit YYYY | Total plăți efectuate în anul curent (RON) |
+| Istoric plăți | Număr plăți + atribut JSON cu istoricul complet |
 
-Actualizare automată la fiecare 30 de minute.
+### Apă rece
+| Senzor | Descriere |
+|--------|-----------|
+| Apa rece – Baie – Index | Indexul contorului de la baie |
+| Apa rece – Baie – Consum | Consumul baie (ultima lună) |
+| Apa rece – Bucătărie – Index | Indexul contorului de la bucătărie |
+| Apa rece – Bucătărie – Consum | Consumul bucătărie (ultima lună) |
+| Apa rece – consum total | Total consum apă (ultima lună) |
+| Trimitere index — perioadă | Intervalul activ de trimitere (sau „Închisă") |
 
-Posibilitatea de a vizualiza datele în Lovelace Dashboard sau Node-RED.
+---
 
-💡 Senzori disponibili
-Senzor	Descriere	Unitate
-sensor.apa_rece_baie_index	Index contor apă rece – baie	–
-sensor.apa_rece_baie_consum	Consum apă rece – baie	m³
-sensor.apa_rece_bucatarie_index	Index contor apă rece – bucătărie	–
-sensor.apa_rece_bucatarie_consum	Consum apă rece – bucătărie	m³
-sensor.apa_rece_total_consum	Total consum apă (ultima lună)	m³
-sensor.total_de_plata	Total de plată curent (RON)	RON
-sensor.ultima_plata_suma	Suma ultimei plăți	RON
-sensor.ultima_plata_data	Data ultimei plăți	–
-⚙️ Instalare
+## Instalare via HACS
 
-Copiază folderul custom_components/termoservice în directorul:
+1. În HACS → **Custom Repositories** adaugă: `https://github.com/gabrielcolceriu/termoservice`
+2. Categorie: **Integration**
+3. Instalează **TermoService Iași**
+4. Repornește Home Assistant
+5. **Settings → Devices & Services → + Add Integration → TermoService Iasi**
+6. Introdu email-ul și parola de la tsiasi.ro
 
-config/custom_components/termoservice
+---
 
+## Instalare manuală
 
-Repornește Home Assistant.
+Copiază folderul `custom_components/termoservice` în directorul `config/custom_components/`, repornește HA și adaugă integrarea din UI.
 
-Din interfață:
-Settings -> Devices & Services -> + Add Integration -> TermoService Iasi
+---
 
-Introdu emailul și parola de la tsiasi.ro
-.
+## Configurare
 
-🧠 Configurare avansată
+### Interval de refresh
+**Settings → Devices & Services → TermoService → ⚙️ → Interval de actualizare**
 
-Poți modifica intervalul de actualizare din fișierul:
+Default: 120 minute. Range: 30–1440 minute.
 
-custom_components/termoservice/const.py
+### Schimbare credențiale
+**Settings → Devices & Services → TermoService → ⋮ → Reconfigurare**
 
+---
 
-Parametru:
+## Serviciu: trimitere index apă
 
-DEFAULT_SCAN_INTERVAL = 1800  # secunde (30 min)
+Disponibil în perioada de citire (de obicei 20–25 ale lunii):
 
-🪪 Detalii tehnice
+```yaml
+service: termoservice.trimite_index
+data:
+  index_baie: 612
+  index_bucatarie: 663
+```
 
-Limbaj: Python 3.11+
+---
 
-Framework: Home Assistant Core Integration
+## Disclaimer
 
-Dependințe: requests, beautifulsoup4
+Această integrare nu este asociată oficial cu Termo Service Iași S.A. Datele sunt citite exclusiv din contul personal de pe tsiasi.ro folosind metode publice. Folosește integrarea responsabil, respectând termenii și condițiile furnizorului.
 
-Clase principale:
+---
 
-TermoServiceClient – autentificare și scraping
-
-TermoServiceCoordinator – management actualizări
-
-Sensor Entities – senzori individuali pentru apă și plăți
-
-🧰 Planuri viitoare
-
- Suport pentru mai multe apartamente per cont
-
- Istoric grafic complet pentru apă
-
- Integrare cu Utility Meter
-
- Auto-discovery în HACS
-
-⚠️ Disclaimer
-
-Această integrare nu este asociată oficial cu Termo Service Iași S.A.
-Datele sunt citite exclusiv din contul tău personal de pe tsiasi.ro
- folosind metode publice (fără API).
-Folosește integrarea responsabil, respectând termenii și condițiile furnizorului.
-
-🧑‍💻 Autor
-Gabriel Colceriu
-📍 Iași, România
-💡 Integrare dezvoltată pentru comunitatea Home Assistant România.
+**Autor:** Gabriel Colceriu — Iași, România
